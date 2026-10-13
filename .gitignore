@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+.DS_Store
+
+# la chiave API resta solo in locale
+.env.local
+.env.*.local
