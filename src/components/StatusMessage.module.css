@@ -1,0 +1,26 @@
+.box {
+  max-width: 40rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: var(--radius);
+}
+
+.box p {
+  margin: 0 0 1rem;
+}
+
+.box p:last-child {
+  margin-bottom: 0;
+}
+
+.neutral {
+  background-color: var(--sprout);
+}
+
+.error {
+  background-color: #fbe9e5;
+}
+
+.title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
