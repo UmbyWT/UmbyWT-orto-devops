@@ -1,0 +1,47 @@
+.list {
+  display: grid;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 1rem;
+}
+
+.number {
+  font-family: var(--font-slab);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--leaf);
+}
+
+.text {
+  margin: 0 0 0.5rem;
+  max-width: 62ch;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.check input {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  accent-color: var(--leaf);
+}
+
+.done .number,
+.done .text {
+  opacity: 0.45;
+}
