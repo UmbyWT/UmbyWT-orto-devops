@@ -54,6 +54,17 @@ describe('toRecipeDetail', () => {
     expect(oil).toMatchObject({ amount: null, unit: '' });
   });
 
+  it('senza unità tratta come numero solo i conteggi scritti nella ricetta', () => {
+    const raw = (original, amount, unitShort) => ({
+      ...ratatouille,
+      extendedIngredients: [{ id: 1, name: 'eggplant', original, measures: { metric: { amount, unitShort } } }],
+    });
+
+    expect(toRecipeDetail(raw('2 eggplants, peeled', 2, '')).ingredients[0]).toMatchObject({ amount: 2, unit: '' });
+    expect(toRecipeDetail(raw('salt to taste', 1, '')).ingredients[0]).toMatchObject({ amount: null });
+    expect(toRecipeDetail(raw('½ cup rice', 0.5, 'cups')).ingredients[0]).toMatchObject({ amount: 0.5, unit: 'cups' });
+  });
+
   it('dà a ogni ingrediente una chiave diversa', () => {
     const keys = recipe.ingredients.map((ingredient) => ingredient.key);
     expect(new Set(keys).size).toBe(keys.length);

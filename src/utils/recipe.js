@@ -29,13 +29,19 @@ export function cleanSummary(html = '') {
     .trim();
 }
 
-// Le unità "servings" nelle quantità di Spoonacular significano "quanto basta"
-const NOT_MEASURABLE = ['serving', 'servings', ''];
+// Nelle quantità di Spoonacular l'unità "servings" vuol dire "quanto basta".
+// Senza unità invece può essere un conteggio ("2 eggplants") oppure ancora un
+// "quanto basta": lo considero un numero solo se la ricetta originale ne riporta uno.
+function isMeasurable(raw, amount, unit) {
+  if (!Number.isFinite(amount) || /^servings?$/i.test(unit)) return false;
+  if (unit) return true;
+  return /^\s*[\d½¼¾⅓⅔⅛]/.test(raw.original ?? '');
+}
 
 function toIngredient(raw, index) {
   const metric = raw.measures?.metric ?? {};
   const unit = metric.unitShort ?? '';
-  const measurable = Number.isFinite(metric.amount) && !NOT_MEASURABLE.includes(unit.toLowerCase());
+  const measurable = isMeasurable(raw, metric.amount, unit);
 
   return {
     // lo stesso ingrediente può comparire due volte, l'indice rende la chiave unica

@@ -6,11 +6,15 @@ export function scaleAmount(amount, fromServings, toServings) {
   return (amount * toServings) / fromServings;
 }
 
-// 372 -> "370", 2.25 -> "2,3", 0.5 -> "0,5"
+const smallFormat = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 });
+
+// 372 -> "370", 2.25 -> "2,3", 0.25 -> "0,25"
 export function formatAmount(amount) {
   if (amount == null) return '';
   if (amount >= 100) return numberFormat.format(Math.round(amount / 10) * 10);
   if (amount >= 10) return numberFormat.format(Math.round(amount));
+  // sotto l'unità (un quarto di cucchiaino) serve un decimale in più
+  if (amount < 1) return smallFormat.format(amount);
   return numberFormat.format(amount);
 }
 

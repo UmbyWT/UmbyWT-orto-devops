@@ -101,7 +101,7 @@ npm run preview   # la serve in locale per controllarla
 
 ## Test
 
-Ci sono 69 test in 11 file. Coprono la trasformazione dei dati dell'API (con risposte vere salvate in `src/test/fixtures`), il calcolo delle dosi, i due reducer, la chiamata ad Axios con i parametri giusti, i componenti principali e i flussi delle pagine: ricerca, "Mostra altre", errori, porzioni, preferiti, blocco delle ricette non vegetariane.
+Ci sono 71 test in 11 file. Coprono la trasformazione dei dati dell'API (con risposte vere salvate in `src/test/fixtures`), il calcolo delle dosi, i due reducer, la chiamata ad Axios con i parametri giusti, i componenti principali e i flussi delle pagine: ricerca, "Mostra altre", errori, porzioni, preferiti, blocco delle ricette non vegetariane.
 
 ## Pubblicazione
 

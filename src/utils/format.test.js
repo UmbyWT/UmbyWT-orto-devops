@@ -30,7 +30,12 @@ describe('formatAmount', () => {
     expect(formatAmount(1.5)).toBe('1,5');
     expect(formatAmount(2.25)).toBe('2,3');
     expect(formatAmount(4)).toBe('4');
-    expect(formatAmount(0.333)).toBe('0,3');
+  });
+
+  it('sotto l\'unità tiene due decimali', () => {
+    expect(formatAmount(0.25)).toBe('0,25');
+    expect(formatAmount(0.333)).toBe('0,33');
+    expect(formatAmount(0.5)).toBe('0,5');
   });
 
   it('senza quantità restituisce una stringa vuota', () => {
