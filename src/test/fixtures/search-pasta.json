@@ -1,0 +1,31 @@
+{
+  "offset": 0,
+  "number": 4,
+  "totalResults": 80,
+  "results": [
+    {
+      "id": 657933,
+      "title": "Ratatouille Pasta",
+      "image": "https://img.spoonacular.com/recipes/657933-312x231.jpg",
+      "imageType": "jpg"
+    },
+    {
+      "id": 652061,
+      "title": "Miso Cream Pasta",
+      "image": "https://img.spoonacular.com/recipes/652061-312x231.jpg",
+      "imageType": "jpg"
+    },
+    {
+      "id": 660101,
+      "title": "Simple Garlic Pasta",
+      "image": "https://img.spoonacular.com/recipes/660101-312x231.jpg",
+      "imageType": "jpg"
+    },
+    {
+      "id": 511728,
+      "title": "Pasta Margherita",
+      "image": "https://img.spoonacular.com/recipes/511728-312x231.jpg",
+      "imageType": "jpg"
+    }
+  ]
+}
