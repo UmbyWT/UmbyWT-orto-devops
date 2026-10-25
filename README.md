@@ -330,11 +330,13 @@ eslint.config.js              regole del lint
 
 ## Cosa è andato storto durante la messa in opera
 
-Due problemi veri, tutti e due fermati o scoperti dalla pipeline.
+Tre intoppi veri. I primi due li ha fermati o fatti vedere la pipeline, il terzo l'ho trovato controllando le impostazioni prima del deploy.
 
 Il primo deploy si è fermato con "Project not found". Il token di Vercel era stato creato con lo scope sbagliato: Vercel ora permette di limitare un token a singoli progetti, e io avevo scelto per errore il progetto della boutique invece di `orto-devops`. Il token funzionava, ma non vedeva il progetto giusto. L'ho capito dal fatto che il token risultava usato pochi secondi prima: il login era andato a buon fine, mancava il permesso. Ho creato un token limitato a `orto-devops` e revocato quello vecchio, che apriva un progetto che non c'entrava niente.
 
 Il secondo problema l'ho visto leggendo il log. Il primo deploy di staging è uscito come "Production" e ha preso il dominio pubblico, perché Vercel promuove in produzione il primo deploy di un progetto. Non ha fatto danni, dato che il codice era lo stesso e il deploy di produzione è arrivato subito dopo. Però il comando non diceva esplicitamente dove andare. Adesso lo dice: `vercel deploy --prebuilt --environment=preview`.
+
+Il terzo riguarda i secret. Il token di Sentry per le sourcemap l'avevo salvato tra le Variables di GitHub invece che tra i Secrets. Le Variables si leggono in chiaro e non vengono mascherate nei log, e la pipeline il token lo cerca tra i Secrets, quindi non l'avrebbe nemmeno trovato. Non è mai finito in una run: l'ho spostato tra i Secrets e ho cancellato la variabile. Ora nelle Variables ci sono solo valori pubblici (`VITE_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`).
 
 ## Limiti e prossimi passi
 
