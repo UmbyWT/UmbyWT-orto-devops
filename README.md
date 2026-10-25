@@ -252,8 +252,8 @@ Due monitor, tutti e due con controllo ogni 5 minuti e avviso via email:
 
 | Monitor | Tipo | Indirizzo | Va giù quando |
 |---|---|---|---|
-| Orto, sito | HTTP(s) | `https://orto-devops.vercel.app` | il sito non risponde o risponde con un errore |
-| Orto, API | Keyword | `https://orto-devops.vercel.app/api/health` | la risposta non contiene `"status":"ok"` |
+| orto-devops.vercel.app | HTTP(s) | `https://orto-devops.vercel.app` | il sito non risponde o risponde con un errore |
+| Keyword on orto-devops.vercel.app/api/health | Keyword | `https://orto-devops.vercel.app/api/health` | la risposta non contiene `"status":"ok"` |
 
 Il secondo monitor esiste perché il sito può essere online con il backend rotto: le pagine si aprono ma le ricerche falliscono. `/api/health` risponde 503 quando manca la chiave e non costa punti di Spoonacular, perché non la chiama.
 
@@ -267,7 +267,7 @@ Sentry si attiva solo se c'è `VITE_SENTRY_DSN`: in locale e nei test resta spen
 
 Non tutti gli errori delle API arrivano a Sentry. Una ricetta che non esiste o la rete del telefono che cade dipendono da chi usa il sito e farebbero solo rumore. Vanno a Sentry la chiave non valida (401), la quota finita (402, come warning) e gli errori del backend (5xx). La scelta sta in `classifyApiError` dentro `src/utils/errors.js`, ed è coperta dai test.
 
-Gli eventi non contengono indirizzi IP (`sendDefaultPii: false`). Se nella pipeline c'è `SENTRY_AUTH_TOKEN`, la build carica le sourcemap su Sentry e poi le cancella da `dist`: su Sentry lo stack trace punta al file e alla riga del codice sorgente, mentre online non finisce codice leggibile.
+Gli eventi non salvano l'indirizzo IP di chi usa il sito. Nel codice c'è `sendDefaultPii: false`, ma da solo non basta (vedi sotto, tra gli intoppi): serve anche l'opzione "Prevent Storing of IP Addresses" nelle impostazioni del progetto su Sentry. Se nella pipeline c'è `SENTRY_AUTH_TOKEN`, la build carica le sourcemap su Sentry e poi le cancella da `dist`: su Sentry lo stack trace punta al file e alla riga del codice sorgente, mentre online non finisce codice leggibile.
 
 ### Simulare un errore
 
@@ -330,13 +330,15 @@ eslint.config.js              regole del lint
 
 ## Cosa è andato storto durante la messa in opera
 
-Tre intoppi veri. I primi due li ha fermati o fatti vedere la pipeline, il terzo l'ho trovato controllando le impostazioni prima del deploy.
+Quattro intoppi veri. I primi due li ha fermati o fatti vedere la pipeline, gli altri due li ho trovati controllando impostazioni ed eventi.
 
 Il primo deploy si è fermato con "Project not found". Il token di Vercel era stato creato con lo scope sbagliato: Vercel ora permette di limitare un token a singoli progetti, e io avevo scelto per errore il progetto della boutique invece di `orto-devops`. Il token funzionava, ma non vedeva il progetto giusto. L'ho capito dal fatto che il token risultava usato pochi secondi prima: il login era andato a buon fine, mancava il permesso. Ho creato un token limitato a `orto-devops` e revocato quello vecchio, che apriva un progetto che non c'entrava niente.
 
 Il secondo problema l'ho visto leggendo il log. Il primo deploy di staging è uscito come "Production" e ha preso il dominio pubblico, perché Vercel promuove in produzione il primo deploy di un progetto. Non ha fatto danni, dato che il codice era lo stesso e il deploy di produzione è arrivato subito dopo. Però il comando non diceva esplicitamente dove andare. Adesso lo dice: `vercel deploy --prebuilt --environment=preview`.
 
 Il terzo riguarda i secret. Il token di Sentry per le sourcemap l'avevo salvato tra le Variables di GitHub invece che tra i Secrets. Le Variables si leggono in chiaro e non vengono mascherate nei log, e la pipeline il token lo cerca tra i Secrets, quindi non l'avrebbe nemmeno trovato. Non è mai finito in una run: l'ho spostato tra i Secrets e ho cancellato la variabile. Ora nelle Variables ci sono solo valori pubblici (`VITE_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`).
+
+Il quarto l'ho visto nel primo evento di prova su Sentry: c'era il mio indirizzo IP, anche se nel codice avevo messo `sendDefaultPii: false`. Quell'opzione impedisce all'SDK di mandare dati personali, ma Sentry l'IP lo ricava comunque dalla richiesta che riceve. Ho attivato "Prevent Storing of IP Addresses" nelle impostazioni del progetto e generato un secondo errore di prova: l'IP non c'è più, resta solo la città approssimativa.
 
 ## Limiti e prossimi passi
 
