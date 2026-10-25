@@ -4,7 +4,7 @@ import ratatouille from '../test/fixtures/recipe-657933.json';
 import { client } from './client.js';
 import { getRecipe, PAGE_SIZE, searchRecipes } from './recipes.js';
 
-vi.mock('./client.js', () => ({ client: { get: vi.fn() }, hasApiKey: true }));
+vi.mock('./client.js', () => ({ client: { get: vi.fn() } }));
 
 describe('searchRecipes', () => {
   beforeEach(() => {
@@ -12,11 +12,11 @@ describe('searchRecipes', () => {
     client.get.mockResolvedValue({ data: search });
   });
 
-  it('chiede solo ricette vegetariane con procedimento, 12 alla volta', async () => {
+  it('chiede al backend 12 ricette alla volta', async () => {
     await searchRecipes({ query: 'pasta' });
 
-    expect(client.get).toHaveBeenCalledWith('/recipes/complexSearch', {
-      params: { query: 'pasta', diet: 'vegetarian', instructionsRequired: true, number: PAGE_SIZE, offset: 0 },
+    expect(client.get).toHaveBeenCalledWith('/search', {
+      params: { query: 'pasta', number: PAGE_SIZE, offset: 0 },
       signal: undefined,
     });
   });
@@ -55,14 +55,14 @@ describe('searchRecipes', () => {
 });
 
 describe('getRecipe', () => {
-  it('chiama il dettaglio senza dati nutrizionali e restituisce la ricetta pulita', async () => {
+  it('chiede il dettaglio al backend e restituisce la ricetta pulita', async () => {
     client.get.mockReset();
     client.get.mockResolvedValue({ data: ratatouille });
 
     const recipe = await getRecipe('657933');
 
-    expect(client.get).toHaveBeenCalledWith('/recipes/657933/information', {
-      params: { includeNutrition: false },
+    expect(client.get).toHaveBeenCalledWith('/recipe', {
+      params: { id: '657933' },
       signal: undefined,
     });
     expect(recipe.title).toBe('Ratatouille Pasta');

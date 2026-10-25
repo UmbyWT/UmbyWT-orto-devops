@@ -1,13 +1,9 @@
 import axios from 'axios';
 
-const apiKey = import.meta.env.VITE_SPOONACULAR_API_KEY;
-
-export const hasApiKey = Boolean(apiKey);
-
-// Unica istanza di Axios per tutta l'app: indirizzo, timeout e chiave
-// sono impostati qui e non nei componenti
+// Unica istanza di Axios per tutta l'app. Le richieste vanno al nostro
+// backend (/api), che aggiunge la chiave di Spoonacular lato server:
+// nel JavaScript pubblicato non c'è nessuna chiave.
 export const client = axios.create({
-  baseURL: 'https://api.spoonacular.com',
+  baseURL: '/api',
   timeout: 10000,
-  params: { apiKey },
 });

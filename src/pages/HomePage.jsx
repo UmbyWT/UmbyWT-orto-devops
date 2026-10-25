@@ -1,5 +1,4 @@
 import { Link, useSearchParams } from 'react-router';
-import { hasApiKey } from '../api/client.js';
 import RecipeGrid, { SkeletonGrid } from '../components/RecipeGrid.jsx';
 import SearchForm, { COURSES } from '../components/SearchForm.jsx';
 import StatusMessage from '../components/StatusMessage.jsx';
@@ -43,15 +42,6 @@ export default function HomePage() {
       </section>
 
       <div className="container">
-        {!hasApiKey && (
-          <StatusMessage title="Manca la chiave API di Spoonacular" tone="error">
-            <p>
-              Crea un file <code>.env.local</code> nella cartella del progetto con la riga{' '}
-              <code>VITE_SPOONACULAR_API_KEY=la-tua-chiave</code> e riavvia <code>npm run dev</code>.
-            </p>
-          </StatusMessage>
-        )}
-
         {query ? (
           <Results search={search} query={query} courseLabel={type ? courseLabel : ''} />
         ) : favorites.length > 0 ? (

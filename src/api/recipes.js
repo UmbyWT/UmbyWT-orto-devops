@@ -16,17 +16,13 @@ async function cachedGet(url, params, signal) {
   return data;
 }
 
+// Il filtro vegetariano e l'obbligo del procedimento li aggiunge il
+// backend (server/app.js): dal browser non si possono togliere
 export async function searchRecipes({ query, type = '', offset = 0, signal } = {}) {
-  const params = {
-    query,
-    diet: 'vegetarian', // solo ricette senza carne né pesce
-    instructionsRequired: true, // niente ricette senza procedimento
-    number: PAGE_SIZE,
-    offset,
-  };
+  const params = { query, number: PAGE_SIZE, offset };
   if (type) params.type = type;
 
-  const data = await cachedGet('/recipes/complexSearch', params, signal);
+  const data = await cachedGet('/search', params, signal);
 
   return {
     recipes: (data.results ?? []).map(toRecipeCard),
@@ -35,6 +31,6 @@ export async function searchRecipes({ query, type = '', offset = 0, signal } = {
 }
 
 export async function getRecipe(id, { signal } = {}) {
-  const data = await cachedGet(`/recipes/${id}/information`, { includeNutrition: false }, signal);
+  const data = await cachedGet('/recipe', { id }, signal);
   return toRecipeDetail(data);
 }
