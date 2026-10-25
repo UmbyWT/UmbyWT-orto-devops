@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { searchRecipes } from '../api/recipes.js';
+import { reportApiError } from '../monitoring/sentry.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { initialSearchState, searchReducer } from './searchReducer.js';
 
@@ -24,6 +25,7 @@ export function useRecipeSearch(query, type) {
       .then(({ recipes, total }) => dispatch({ type: 'success', recipes, total }))
       .catch((error) => {
         if (controller.signal.aborted) return;
+        reportApiError(error, { endpoint: 'search', query, type });
         dispatch({ type: 'error', error: getErrorMessage(error) });
       });
 
@@ -49,7 +51,9 @@ export function useRecipeSearch(query, type) {
       });
       dispatch({ type: 'moreSuccess', recipes, total });
     } catch (error) {
-      if (!controller.signal.aborted) dispatch({ type: 'moreError', error: getErrorMessage(error) });
+      if (controller.signal.aborted) return;
+      reportApiError(error, { endpoint: 'search', query, type, offset: state.recipes.length });
+      dispatch({ type: 'moreError', error: getErrorMessage(error) });
     }
   }, [query, type, state.isLoadingMore, state.recipes.length]);
 
