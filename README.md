@@ -1,6 +1,6 @@
 # Orto DevOps
 
-![CI/CD](https://github.com/UmbyWT/orto-devops/actions/workflows/ci-cd.yml/badge.svg)
+![CI/CD](https://github.com/UmbyWT/UmbyWT-orto-devops/actions/workflows/ci-cd.yml/badge.svg)
 
 Il progetto DevOps del master start2impact. Ho preso Orto, il sito di ricette vegetariane che avevo fatto per l'esame di React, e gli ho costruito intorno il ciclo completo: container Docker per lavorare in locale, una pipeline su GitHub Actions che controlla ogni push e pubblica da sola, il deploy pubblico su Vercel, il monitoraggio degli errori con Sentry e quello dell'uptime con UptimeRobot.
 
@@ -107,8 +107,8 @@ Prima di scrivere configurazioni ho diviso il lavoro negli step del brief.
 Servono Docker (con Docker Compose v2) oppure Node 22.22 o superiore, e una chiave gratuita di Spoonacular ([spoonacular.com/food-api/console](https://spoonacular.com/food-api/console)).
 
 ```bash
-git clone https://github.com/UmbyWT/orto-devops.git
-cd orto-devops
+git clone https://github.com/UmbyWT/UmbyWT-orto-devops.git
+cd UmbyWT-orto-devops
 cp .env.example .env    # poi scrivi la chiave dentro .env
 ```
 
@@ -293,8 +293,8 @@ Su Sentry conviene guardare insieme tre cose: quante persone sono coinvolte (use
 
 Le cose da fare una volta sola, nell'ordine in cui le ho fatte.
 
-1. Su GitHub creo il repository pubblico `orto-devops`, vuoto, e faccio il push di `main`. Poi creo il ramo `staging` con `git push origin main:staging`.
-2. Su Vercel accedo con l'account GitHub. Nella cartella del progetto lancio `npx vercel link`, che crea il progetto e scrive `.vercel/project.json` con `orgId` e `projectId`. Il file è nel `.gitignore`.
+1. Su GitHub creo il repository pubblico `UmbyWT-orto-devops` e faccio il push di `main`. Poi creo il ramo `staging` con `git push origin main:staging`.
+2. Su Vercel accedo con l'account GitHub. Nella cartella del progetto lancio `npx vercel link` e chiamo il progetto `orto-devops`, così l'indirizzo pubblico diventa `orto-devops.vercel.app`. Il comando crea il progetto e scrive `.vercel/project.json` con `orgId` e `projectId`. Il file è nel `.gitignore`.
 3. Sempre su Vercel, in Settings → Environment Variables, aggiungo `SPOONACULAR_API_KEY` per Production e Preview e la segno come Sensitive.
 4. In Account Settings → Tokens di Vercel creo un token per la pipeline, con una scadenza.
 5. Su Sentry creo un progetto React e copio il DSN. Per le sourcemap creo anche un token di organizzazione in Settings → Auth Tokens.
