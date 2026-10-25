@@ -3,6 +3,11 @@ dist
 coverage
 .DS_Store
 
-# la chiave API resta solo in locale
-.env.local
-.env.*.local
+# variabili d'ambiente e chiavi: restano solo sul computer di chi sviluppa.
+# Nel repository c'è soltanto .env.example, senza valori.
+.env
+.env.*
+!.env.example
+
+# file scaricati da `vercel pull` (contengono le variabili del progetto)
+.vercel

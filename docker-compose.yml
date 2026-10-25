@@ -1,0 +1,37 @@
+# Ambiente di sviluppo in locale: frontend (nginx) + backend (Node).
+#
+#   cp .env.example .env        # e scrivi la chiave di Spoonacular
+#   docker compose up --build   # poi apri http://localhost:8080
+#
+# Docker Compose legge da solo il file .env della cartella e sostituisce
+# le variabili ${...} qui sotto. Il file .env non entra nelle immagini.
+
+name: orto
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      SPOONACULAR_API_KEY: ${SPOONACULAR_API_KEY:-}
+      APP_ENV: development
+    # nessuna porta pubblicata: il backend si raggiunge solo attraverso
+    # il frontend, su http://localhost:8080/api/..., come in produzione
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_APP_ENV: ${VITE_APP_ENV:-development}
+        VITE_APP_RELEASE: ${VITE_APP_RELEASE:-locale}
+    environment:
+      API_UPSTREAM: http://api:3001
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+    restart: unless-stopped
