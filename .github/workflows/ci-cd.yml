@@ -1,0 +1,259 @@
+# Pipeline CI/CD di Orto.
+#
+# CI, a ogni push su main e su staging (e sulle pull request verso main):
+#   lint     ESLint sul codice e hadolint sui Dockerfile
+#   test     i test di Vitest (frontend e backend)
+#   secret   nessun .env nella history, gitleaks su tutti i commit
+#   docker   build delle due immagini, avvio con docker compose, smoke test
+#
+# CD, solo se i quattro job di CI sono verdi:
+#   push su staging -> deploy di anteprima su Vercel (ambiente staging)
+#   push su main    -> deploy di produzione su Vercel (ambiente production)
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Un push nuovo su un ramo annulla la run vecchia ancora in corso.
+# Su main no: un deploy di produzione si lascia sempre finire.
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      # setup-node registra il formato di ESLint: gli errori compaiono
+      # anche come annotazioni sul file e sulla riga del commit
+      - name: ESLint
+        run: npm run lint
+
+      - name: hadolint sui Dockerfile
+        run: |
+          for file in Dockerfile server/Dockerfile; do
+            echo "Controllo $file"
+            docker run --rm -i hadolint/hadolint:v2.15.1-alpine hadolint - < "$file"
+          done
+
+      - name: Riepilogo dell'errore
+        if: failure()
+        run: |
+          {
+            echo "## Lint non superato"
+            echo "Il codice non rispetta le regole di ESLint o di hadolint."
+            echo "I job di deploy non partono finché il lint non torna verde."
+            echo "Gli errori sono nel log dello step che ha fallito e nelle annotazioni qui sotto."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+  secrets:
+    name: Controllo secret
+    runs-on: ubuntu-latest
+    steps:
+      # tutta la history, non solo l'ultimo commit
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Nessun file .env nella history
+        run: |
+          found=$(git log --all --name-only --format= | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$' | sort -u || true)
+          if [ -n "$found" ]; then
+            echo "::error::Nella history ci sono file .env: $found"
+            exit 1
+          fi
+          echo "Nella history c'è solo .env.example."
+
+      - name: gitleaks su tutti i commit
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 git /repo --redact --no-banner
+
+  docker:
+    name: Build container e smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build delle immagini
+        run: docker compose build
+        env:
+          VITE_APP_ENV: ci
+          VITE_APP_RELEASE: ${{ github.sha }}
+
+      # Il valore della chiave qui non conta: lo smoke test non chiama
+      # Spoonacular, controlla solo che i due container parlino tra loro
+      - name: Avvio dello stack
+        run: docker compose up -d --no-build --wait --wait-timeout 90
+        env:
+          SPOONACULAR_API_KEY: valore-qualsiasi-per-lo-smoke-test
+
+      - name: Smoke test
+        run: |
+          set -e
+          echo "Home servita da nginx"
+          curl -fsS http://localhost:8080/ | grep -q '<title>Orto'
+          echo "Rotta di React aperta direttamente"
+          curl -fsS http://localhost:8080/ricetta/657933 | grep -q '<div id="root">'
+          echo "Backend raggiunto attraverso nginx"
+          curl -fsS http://localhost:8080/api/health | grep -q '"status":"ok"'
+          echo "Validazione degli input del backend"
+          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://localhost:8080/api/recipe?id=abc')" = 400
+          docker compose ps
+
+      - name: Log dei container
+        if: failure()
+        run: docker compose logs
+
+      - name: Spegnimento
+        if: always()
+        run: docker compose down
+
+  deploy-staging:
+    name: Deploy staging
+    needs: [lint, test, secrets, docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      # la CLI di Vercel legge il token dall'ambiente: non compare mai
+      # nella riga di comando, e GitHub lo maschera comunque con ***
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Controllo dei Secrets di Vercel
+        run: |
+          missing=""
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Secrets mancanti:$missing. Vanno aggiunti in Settings > Secrets and variables > Actions (vedi README, sezione Secrets)."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm install --global vercel@latest
+
+      - name: Impostazioni dell'ambiente Preview
+        run: vercel pull --yes --environment=preview
+
+      - name: Build
+        run: vercel build
+        env:
+          VITE_APP_ENV: staging
+          VITE_APP_RELEASE: ${{ github.sha }}
+          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Deploy di anteprima
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Staging pubblicato su $url (accesso con il login di Vercel)" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-production:
+    name: Deploy production
+    needs: [lint, test, secrets, docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Controllo dei Secrets di Vercel
+        run: |
+          missing=""
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Secrets mancanti:$missing. Vanno aggiunti in Settings > Secrets and variables > Actions (vedi README, sezione Secrets)."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm install --global vercel@latest
+
+      - name: Impostazioni dell'ambiente Production
+        run: vercel pull --yes --environment=production
+
+      - name: Build
+        run: vercel build --prod
+        env:
+          VITE_APP_ENV: production
+          VITE_APP_RELEASE: ${{ github.sha }}
+          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Deploy in produzione
+        run: |
+          url=$(vercel deploy --prebuilt --prod)
+          echo "Deploy creato: $url" >> "$GITHUB_STEP_SUMMARY"
+
+      # Il sito pubblico risponde e il backend ha la chiave?
+      # Se no, la run diventa rossa anche se il deploy è andato a buon fine.
+      - name: Controllo del sito pubblicato
+        if: vars.PRODUCTION_URL != ''
+        run: |
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors "${{ vars.PRODUCTION_URL }}/" | grep -q '<title>Orto'
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors "${{ vars.PRODUCTION_URL }}/api/health" | grep -q '"status":"ok"'
+          echo "Produzione raggiungibile: ${{ vars.PRODUCTION_URL }}" >> "$GITHUB_STEP_SUMMARY"

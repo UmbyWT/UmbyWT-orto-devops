@@ -1,0 +1,43 @@
+# Configurazione di nginx per il container del frontend.
+# All'avvio l'immagine sostituisce le variabili ${...} con quelle
+# d'ambiente (API_UPSTREAM, NGINX_LOCAL_RESOLVERS).
+
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Il nome del backend si risolve a ogni richiesta e non all'avvio:
+    # nginx parte anche se il container dell'API non è ancora pronto.
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s ipv6=off;
+    set $api_upstream ${API_UPSTREAM};
+
+    # Intestazioni di sicurezza su tutte le risposte
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
+
+    # Le chiamate /api vanno al backend Node, nello stesso dominio del
+    # sito: niente CORS e nessuna chiave nel browser.
+    location /api/ {
+        proxy_pass $api_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 15s;
+    }
+
+    # I file di Vite hanno l'hash nel nome: si possono tenere in cache
+    # per un anno, una nuova build cambia nome ai file.
+    location /assets/ {
+        expires 1y;
+        try_files $uri =404;
+    }
+
+    # Tutte le altre rotte (/ricetta/123, /preferiti...) le gestisce
+    # React Router: nginx risponde sempre con index.html.
+    location / {
+        expires -1;
+        try_files $uri $uri/ /index.html;
+    }
+}

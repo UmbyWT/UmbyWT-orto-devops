@@ -1,0 +1,27 @@
+.heart {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  color: var(--ink);
+  background-color: rgb(255 255 255 / 0.92);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgb(24 33 27 / 0.2);
+  transition: transform 0.15s ease;
+}
+
+.icon:hover {
+  transform: scale(1.08);
+}
+
+.saved {
+  color: var(--tomato);
+}

@@ -1,0 +1,18 @@
+# Quello che non deve entrare nel contesto di build di Docker.
+# Le chiavi prima di tutto: un .env copiato nell'immagine resterebbe
+# leggibile in uno dei suoi layer.
+.env
+.env.*
+!.env.example
+
+.git
+.github
+.vercel
+node_modules
+dist
+coverage
+docs
+*.md
+Dockerfile
+server/Dockerfile
+docker-compose.yml

@@ -1,0 +1,128 @@
+:root {
+  --leaf: #1e4d2b;
+  --leaf-dark: #143a1f;
+  --sprout: #e3f1c9;
+  --tomato: #d8432c;
+  --ink: #18211b;
+  --muted: #5d6a60;
+  --line: #dde3d6;
+  --page: #fafbf7;
+  --paper: #fff;
+
+  --radius: 14px;
+  --font: 'Roboto', system-ui, sans-serif;
+  --font-slab: 'Roboto Slab', Georgia, serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background-color: var(--page);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--leaf);
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid var(--leaf);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-slab);
+  line-height: 1.15;
+}
+
+.container {
+  width: min(100% - 2rem, 70rem);
+  margin-inline: auto;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+
+/* Pulsanti condivisi */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: var(--leaf);
+}
+
+.btn-primary:hover {
+  background-color: var(--leaf-dark);
+}
+
+.btn-outline {
+  color: var(--leaf);
+  background-color: var(--paper);
+  border-color: var(--leaf);
+}
+
+.btn-outline:hover {
+  background-color: var(--sprout);
+}
+
+.btn[disabled],
+.btn[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
