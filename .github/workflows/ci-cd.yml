@@ -30,6 +30,8 @@ permissions:
 
 env:
   NODE_VERSION: 22
+  # indirizzo pubblico; si può cambiare con la variabile PRODUCTION_URL
+  PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://orto-devops.vercel.app' }}
 
 jobs:
   lint:
@@ -194,7 +196,8 @@ jobs:
       - name: Deploy di anteprima
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt)
+          # target esplicito: un deploy di staging non deve mai finire in produzione
+          url=$(vercel deploy --prebuilt --environment=preview)
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Staging pubblicato su $url (accesso con il login di Vercel)" >> "$GITHUB_STEP_SUMMARY"
 
@@ -205,7 +208,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: ${{ vars.PRODUCTION_URL }}
+      url: ${{ env.PRODUCTION_URL }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -252,8 +255,7 @@ jobs:
       # Il sito pubblico risponde e il backend ha la chiave?
       # Se no, la run diventa rossa anche se il deploy è andato a buon fine.
       - name: Controllo del sito pubblicato
-        if: vars.PRODUCTION_URL != ''
         run: |
-          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors "${{ vars.PRODUCTION_URL }}/" | grep -q '<title>Orto'
-          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors "${{ vars.PRODUCTION_URL }}/api/health" | grep -q '"status":"ok"'
-          echo "Produzione raggiungibile: ${{ vars.PRODUCTION_URL }}" >> "$GITHUB_STEP_SUMMARY"
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors "$PRODUCTION_URL/" | grep -q '<title>Orto'
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors "$PRODUCTION_URL/api/health" | grep -q '"status":"ok"'
+          echo "Produzione raggiungibile: $PRODUCTION_URL" >> "$GITHUB_STEP_SUMMARY"

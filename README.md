@@ -191,7 +191,7 @@ In Settings → Secrets and variables → Actions:
 | `SENTRY_AUTH_TOKEN` | Secret | carica le sourcemap su Sentry (facoltativo) |
 | `VITE_SENTRY_DSN` | Variable | DSN del progetto Sentry, finisce nella build |
 | `SENTRY_ORG`, `SENTRY_PROJECT` | Variable | dove caricare le sourcemap |
-| `PRODUCTION_URL` | Variable | indirizzo pubblico, per il controllo dopo il deploy |
+| `PRODUCTION_URL` | Variable | facoltativa: l'indirizzo pubblico, se diverso da `https://orto-devops.vercel.app` |
 
 I Secrets sono cifrati, e GitHub li sostituisce con `***` se compaiono nei log. Le Variables invece si leggono in chiaro: le ho usate solo per valori che non sono segreti.
 
@@ -235,7 +235,7 @@ Per provarlo senza toccare la produzione basta un push sul ramo `staging` con un
 
 Se i quattro job di CI sono verdi, parte uno dei due job di deploy:
 
-- push su `staging` → job "Deploy staging": `vercel pull --environment=preview`, `vercel build`, `vercel deploy --prebuilt`. L'indirizzo dell'anteprima finisce nel riepilogo della run e nell'ambiente `staging` di GitHub
+- push su `staging` → job "Deploy staging": `vercel pull --environment=preview`, `vercel build`, `vercel deploy --prebuilt --environment=preview`. L'indirizzo dell'anteprima finisce nel riepilogo della run e nell'ambiente `staging` di GitHub
 - push su `main` → job "Deploy production": le stesse tre fasi con `--prod`. Alla fine un controllo chiama la home e `/api/health` sul dominio pubblico: se il sito non risponde o il backend non ha la chiave, la run diventa rossa anche se Vercel ha accettato il deploy
 
 La build avviene sul runner di GitHub e Vercel riceve il risultato già pronto (`--prebuilt`). Così va online proprio la build che ha passato i controlli. Durante la build la pipeline passa a Vite l'ambiente (`staging` o `production`) e lo SHA del commit, che Sentry usa come release.
@@ -327,6 +327,14 @@ vercel.json                   build, rewrite per React Router, header, deploy da
 eslint.config.js              regole del lint
 .env.example                  le variabili d'ambiente, senza valori
 ```
+
+## Cosa è andato storto durante la messa in opera
+
+Due problemi veri, tutti e due fermati o scoperti dalla pipeline.
+
+Il primo deploy si è fermato con "Project not found". Il token di Vercel era stato creato con lo scope sbagliato: Vercel ora permette di limitare un token a singoli progetti, e io avevo scelto per errore il progetto della boutique invece di `orto-devops`. Il token funzionava, ma non vedeva il progetto giusto. L'ho capito dal fatto che il token risultava usato pochi secondi prima: il login era andato a buon fine, mancava il permesso. Ho creato un token limitato a `orto-devops` e revocato quello vecchio, che apriva un progetto che non c'entrava niente.
+
+Il secondo problema l'ho visto leggendo il log. Il primo deploy di staging è uscito come "Production" e ha preso il dominio pubblico, perché Vercel promuove in produzione il primo deploy di un progetto. Non ha fatto danni, dato che il codice era lo stesso e il deploy di produzione è arrivato subito dopo. Però il comando non diceva esplicitamente dove andare. Adesso lo dice: `vercel deploy --prebuilt --environment=preview`.
 
 ## Limiti e prossimi passi
 
