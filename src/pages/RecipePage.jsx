@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import FavoriteButton from '../components/FavoriteButton.jsx';
 import IngredientList from '../components/IngredientList.jsx';
@@ -22,15 +22,14 @@ export default function RecipePage() {
 
 function RecipeDetail({ id }) {
   const { status, recipe, error, retry } = useRecipe(id);
-  const [servings, setServings] = useState(null);
+  const [chosenServings, setServings] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useDocumentTitle(recipe?.title);
 
-  useEffect(() => {
-    if (recipe) setServings(recipe.servings);
-  }, [recipe]);
+  // finché non si toccano le porzioni valgono quelle della ricetta
+  const servings = chosenServings ?? recipe?.servings ?? null;
 
   // "default" vuol dire che la pagina è stata aperta direttamente da un link:
   // in quel caso indietro porta alla ricerca e non fuori dal sito

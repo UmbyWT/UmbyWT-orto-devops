@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import styles from './SearchForm.module.css';
 
 // valori accettati dal parametro "type" di Spoonacular
@@ -22,11 +22,14 @@ export default function SearchForm({ initialQuery = '', initialType = '', onSear
   const id = useId();
 
   // se la ricerca cambia da fuori (indietro del browser, suggerimenti)
-  // il modulo si allinea all'indirizzo
-  useEffect(() => {
+  // il modulo si allinea all'indirizzo. Si fa durante il render, come
+  // suggerisce la documentazione di React, e non in un useEffect.
+  const [synced, setSynced] = useState({ initialQuery, initialType });
+  if (synced.initialQuery !== initialQuery || synced.initialType !== initialType) {
+    setSynced({ initialQuery, initialType });
     setQuery(initialQuery);
     setType(initialType);
-  }, [initialQuery, initialType]);
+  }
 
   function handleSubmit(event) {
     event.preventDefault();

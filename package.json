@@ -1,30 +1,39 @@
 {
-  "name": "orto-ricette-vegetariane",
+  "name": "orto-devops",
   "version": "1.0.0",
-  "description": "Orto, ricette vegetariane cercate con l'API di Spoonacular",
+  "description": "Orto, ricette vegetariane con Spoonacular: ciclo DevOps completo con Docker, GitHub Actions, Vercel, Sentry e UptimeRobot",
   "author": "Umberto Brignone",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node --env-file-if-exists=.env --watch server/index.js",
+    "start:api": "node server/index.js",
     "build": "vite build",
     "preview": "vite preview",
+    "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@fontsource/roboto": "^5.3.0",
     "@fontsource/roboto-slab": "^5.3.0",
+    "@sentry/react": "^11.9.0",
     "axios": "^1.20.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router": "^8.4.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@sentry/vite-plugin": "^11.9.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
     "@vitejs/plugin-react": "^6.1.2",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
     "jsdom": "^29.1.1",
     "vite": "^8.3.4",
     "vitest": "^5.0.4"
